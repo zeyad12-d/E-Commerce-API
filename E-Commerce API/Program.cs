@@ -71,6 +71,7 @@ namespace E_Commerce_API
               builder.Services.AddScoped<IProductServices,ProductServices>();
             builder.Services.AddScoped<ICategoryServices, CategoryServices>();
             builder.Services.AddScoped<IOrderServices, OrderServices>();
+            builder.Services.AddScoped<IAddressServices, AddressServices>();
 
 
             var app = builder.Build();

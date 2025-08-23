@@ -30,6 +30,9 @@ namespace E_commerce_Inferstructure.Data
                 .HasForeignKey(a => a.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+           
+                
+
             // Category - Products
             builder.Entity<Category>()
                 .HasMany(c => c.Products)
@@ -53,7 +56,7 @@ namespace E_commerce_Inferstructure.Data
             builder.Entity<ShoppingCart>()
                 .HasOne(sc => sc.User)
                 .WithOne(u => u.ShoppingCart)
-                .HasForeignKey<ShoppingCart>(sc => sc.UserId);
+                .HasForeignKey<ShoppingCart>(sc => sc.UserName);
 
 
             // ShoppingCart - CartItems
@@ -79,6 +82,13 @@ namespace E_commerce_Inferstructure.Data
                 .HasOne(o => o.ShippingAddress)
                 .WithMany()
                 .HasForeignKey(o => o.ShoppingAddressId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Order - BillingAddress
+            builder.Entity<Order>()
+                .HasOne(o => o.BillingAddress)
+                .WithMany()
+                .HasForeignKey(o => o.BillingAddressId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // OrderItem - Order

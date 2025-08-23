@@ -15,7 +15,7 @@ namespace E_commerce_Core.Interfaces.Services
         Task<ApiResponse<IEnumerable<OrderResponseDto>>> GetAllOrdersAsync(int PageNumber,int PageSize);
         Task<ApiResponse<bool>> UpdateOrderStatusAsync(int orderId, string status);
         Task<ApiResponse<bool>> DeleteOrderAsync(int orderId);
-        Task<ApiResponse<IEnumerable<OrderResponseDto>>> GetOrdersByStatusAsync(string status);
+        Task<ApiResponse<IEnumerable<OrderResponseDto>>> GetOrdersByStatusAsync(string status ,int pageNumber, int pageSize);
         Task<ApiResponse<IEnumerable<OrderResponseDto>>> GetOrdersByUserNameAsync(string userId);
 
         Task<ApiResponse<decimal>> CalculateTotalAmountAsync(int orderId);

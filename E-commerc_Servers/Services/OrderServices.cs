@@ -26,7 +26,6 @@ namespace E_commerc_Servers.Services
         {
             try
             {
-                
                 var user = await _userManager.FindByNameAsync(orderDto.UserName);
                 if (user == null)
                 {
@@ -38,47 +37,38 @@ namespace E_commerc_Servers.Services
                     };
                 }
 
-               
                 var shippingAddress = await _unitOfWork.AddressRepo.GetById(orderDto.ShippingAddressId);
                 var billingAddress = await _unitOfWork.AddressRepo.GetById(orderDto.BillingAddressId);
 
-                if (shippingAddress == null )
-                {
+                if (shippingAddress == null)
                     return new ApiResponse<OrderResponseDto>
                     {
                         StatusCode = 400,
-                        Message = "Shipping address is invalid or does not belong to the user.",
+                        Message = "Shipping address is invalid.",
                         Data = null
                     };
-                }
 
-                if (billingAddress == null )
-                {
+                if (billingAddress == null)
                     return new ApiResponse<OrderResponseDto>
                     {
                         StatusCode = 400,
-                        Message = "Billing address is invalid or does not belong to the user.",
+                        Message = "Billing address is invalid.",
                         Data = null
                     };
-                }
 
-             
                 var productIds = orderDto.OrderItems.Select(i => i.ProductId).ToList();
                 var products = await _unitOfWork.ProductRepo.Query()
                     .Where(p => productIds.Contains(p.ProductId))
                     .ToListAsync();
 
                 if (products.Count != productIds.Count)
-                {
                     return new ApiResponse<OrderResponseDto>
                     {
                         StatusCode = 404,
                         Message = "One or more products not found.",
                         Data = null
                     };
-                }
 
-                
                 foreach (var item in orderDto.OrderItems)
                 {
                     var product = products.FirstOrDefault(p => p.ProductId == item.ProductId);
@@ -93,9 +83,9 @@ namespace E_commerc_Servers.Services
                     }
                 }
 
-              
                 var order = new Order
                 {
+                    UserId = user.Id,
                     UserName = orderDto.UserName,
                     ShoppingAddressId = orderDto.ShippingAddressId,
                     BillingAddressId = orderDto.BillingAddressId,
@@ -105,7 +95,6 @@ namespace E_commerc_Servers.Services
                 };
 
                 decimal totalAmount = 0;
-
                 foreach (var item in orderDto.OrderItems)
                 {
                     var product = products.First(p => p.ProductId == item.ProductId);
@@ -121,7 +110,6 @@ namespace E_commerc_Servers.Services
 
                     order.Items.Add(orderItem);
 
-                   
                     product.StockQuantity -= item.Quantity;
                     _unitOfWork.ProductRepo.Update(product);
                 }
@@ -162,15 +150,16 @@ namespace E_commerc_Servers.Services
                     {
                         Id = o.OrderId,
                         UserId = o.User.Id,
-                        UserName = o.User.UserName, 
+                        UserName = o.User.UserName,
                         ShippingAddress = o.ShippingAddress.AddressLine1 + ", " + o.ShippingAddress.City + ", " + o.ShippingAddress.Country,
-                        BillingAddress = o.ShippingAddress.AddressLine1 + ", " + o.ShippingAddress.City + ", " + o.ShippingAddress.Country,
+                        BillingAddress = o.BillingAddress.AddressLine1 + ", " + o.BillingAddress.City + ", " + o.BillingAddress.Country,
                         OrderDate = o.CreatedAt,
                         OrderStatus = o.OrderStatus,
                         TotalAmount = o.TotalAmount,
                         OrderItems = o.Items.Select(item => new OrderItemResponseDto
                         {
                             ProductId = item.ProductId,
+                            ProductName = item.Product.Name,
                             Quantity = item.Quantity,
                             Price = item.Price
                         }).ToList()
@@ -203,7 +192,7 @@ namespace E_commerc_Servers.Services
                 };
             }
         }
-        
+
         public async Task<ApiResponse<IEnumerable<OrderResponseDto>>> GetAllOrdersAsync(int pageNumber = 1, int pageSize = 10)
         {
             if (pageNumber < 1) pageNumber = 1;
@@ -212,40 +201,39 @@ namespace E_commerc_Servers.Services
             var totalOrders = await _unitOfWork.OrderRepo.Query().CountAsync();
 
             var respones = await _unitOfWork.OrderRepo.Query()
-                   .Include(o => o.User)
-                   .Include(o => o.ShippingAddress)
-                   .Include(o => o.Items)
-                   .ThenInclude(i => i.Product)
-                .Skip((pageNumber-1)*pageSize)
+                .Include(o => o.User)
+                .Include(o => o.ShippingAddress)
+                .Include(o => o.BillingAddress)
+                .Include(o => o.Items).ThenInclude(i => i.Product)
+                .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .AsNoTracking()
-                .Select(s=> new OrderResponseDto
+                .Select(s => new OrderResponseDto
                 {
-                    OrderStatus=s.OrderStatus,
-                    TotalAmount=s.TotalAmount,
-                    UserId=s.UserId,
-                    UserName=s.UserName,
+                    Id = s.OrderId,
+                    OrderStatus = s.OrderStatus,
+                    TotalAmount = s.TotalAmount,
+                    UserId = s.UserId,
+                    UserName = s.User.UserName,
                     ShippingAddress = s.ShippingAddress.AddressLine1 + ", " + s.ShippingAddress.City + ", " + s.ShippingAddress.Country,
-                    BillingAddress =s.ShippingAddress.AddressLine1 + ", " + s.ShippingAddress.City + ", " + s.ShippingAddress.Country,
-                    OrderDate =s.CreatedAt,
-                    OrderItems =s.Items.Select(c=> new OrderItemResponseDto
+                    BillingAddress = s.BillingAddress.AddressLine1 + ", " + s.BillingAddress.City + ", " + s.BillingAddress.Country,
+                    OrderDate = s.CreatedAt,
+                    OrderItems = s.Items.Select(c => new OrderItemResponseDto
                     {
-                        ProductId=c.ProductId,
-                        ProductName = c.Product.Name, 
-                        Price =c.Price,
-                        Quantity=c.Quantity,
-
+                        ProductId = c.ProductId,
+                        ProductName = c.Product.Name,
+                        Price = c.Price,
+                        Quantity = c.Quantity
                     }).ToList()
-
                 }).ToListAsync();
 
             return new ApiResponse<IEnumerable<OrderResponseDto>>
             {
                 StatusCode = 200,
-                Message =  respones.Any()?"Orders retrieved successfully." : "No orders found.",
+                Message = respones.Any() ? "Orders retrieved successfully." : "No orders found.",
                 Data = respones,
                 TotalPages = (int)Math.Ceiling((double)totalOrders / pageSize)
-            };  
+            };
         }
 
         public async Task<ApiResponse<IEnumerable<OrderResponseDto>>> GetOrdersByUserNameAsync(string userName)
@@ -266,6 +254,7 @@ namespace E_commerc_Servers.Services
                 var orders = await _unitOfWork .OrderRepo.Query().
                   Include(o => o.User)
                   .Include(o => o.ShippingAddress)
+                  .Include(o => o.BillingAddress)
                   .Include(o => o.Items)
                   .ThenInclude(i => i.Product)
                   .AsNoTracking()
@@ -277,7 +266,7 @@ namespace E_commerc_Servers.Services
                       UserId = s.UserId,
                       UserName = s.User.UserName,
                       ShippingAddress = s.ShippingAddress.AddressLine1 + ", " + s.ShippingAddress.City + ", " + s.ShippingAddress.Country,
-                      BillingAddress = s.ShippingAddress.AddressLine1 + ", " + s.ShippingAddress.City + ", " + s.ShippingAddress.Country,
+                      BillingAddress = s.BillingAddress.AddressLine1 + ", " + s.BillingAddress.City + ", " + s.BillingAddress.Country,
                       OrderDate = s.CreatedAt,
                       OrderItems = s.Items.Select(c => new OrderItemResponseDto
                       {
@@ -337,7 +326,7 @@ namespace E_commerc_Servers.Services
 
             try
             {
-                var order = await _unitOfWork .OrderRepo.Query().FirstAsync(c=>c.OrderId == orderId);
+                var order = await _unitOfWork .OrderRepo.Query().FirstOrDefaultAsync(c=>c.OrderId == orderId);
                 if (order ==null)
                 {
                     return new ApiResponse<bool>
@@ -367,20 +356,83 @@ namespace E_commerc_Servers.Services
             }
         }
 
-      
+     public async Task<ApiResponse<IEnumerable<OrderResponseDto>>> GetOrdersByStatusAsync(string status  ,int pageNumber , int pageSize)
+        { 
+            if (pageNumber < 1) pageNumber = 1;
+            if (pageSize < 1) pageSize = 10;
 
-      
+            var totalNumber = await _unitOfWork.OrderRepo.Query().CountAsync();
 
-        public Task<ApiResponse<IEnumerable<OrderResponseDto>>> GetOrdersByStatusAsync(string status)
-        {
-            throw new NotImplementedException();
+             var order = await _unitOfWork.OrderRepo.Query()
+                .Include(C=>C.User).Include(C => C.ShippingAddress).
+                Include(C => C.Items)
+                .ThenInclude(C => C.Product)
+                .AsNoTracking()
+                .Where(c => c.OrderStatus.Trim().ToLower() == status.Trim().ToLower())
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .Select(s => new OrderResponseDto
+                {
+                    OrderStatus = s.OrderStatus,
+                    TotalAmount = s.TotalAmount,
+                    UserId = s.UserId,
+                    UserName = s.User.UserName,
+                    ShippingAddress = s.ShippingAddress.AddressLine1 + ", " + s.ShippingAddress.City + ", " + s.ShippingAddress.Country,
+                    BillingAddress = s.ShippingAddress.AddressLine1 + ", " + s.ShippingAddress.City + ", " + s.ShippingAddress.Country,
+                    OrderDate = s.CreatedAt,
+                    OrderItems = s.Items.Select(c => new OrderItemResponseDto
+                    {
+                        ProductId = c.ProductId,
+                        ProductName = c.Product.Name,
+                        Price = c.Price,
+                        Quantity = c.Quantity
+                    }).ToList()
+                }).ToListAsync();
+
+            return new ApiResponse<IEnumerable<OrderResponseDto>>
+            {
+                StatusCode = 200,
+                Message = order.Any() ? "Orders retrieved successfully." : "No orders found with the specified status.",
+                Data = order,
+                TotalPages = (int)Math.Ceiling((double)totalNumber / pageSize)
+            };
         }
 
        
 
-        public Task<ApiResponse<bool>> UpdateOrderStatusAsync(int orderId, string status)
+        public async Task<ApiResponse<bool>> UpdateOrderStatusAsync(int orderId, string status)
         {
-            throw new NotImplementedException();
+            try 
+            {
+                var order = await _unitOfWork.OrderRepo.Query().FirstOrDefaultAsync(o => o.OrderId == orderId);
+                if (order == null)
+                {
+                    return new ApiResponse<bool>
+                    {
+                        StatusCode = 404,
+                        Message = "Order not found.",
+                        Data = false
+                    };
+                }
+                order.OrderStatus = status;
+                 _unitOfWork.OrderRepo.Update(order);
+                await _unitOfWork.SaveChangesAsync();
+                return new ApiResponse<bool>
+                {
+                    StatusCode = 200,
+                    Message = "Order status updated successfully.",
+                    Data = true
+                };
+            }
+            catch ( Exception ex)
+            {
+                return new ApiResponse<bool>
+                {
+                    StatusCode = 500,
+                    Message = $"An error occurred while updating the order status.{ex.Message}",
+                    Data = false
+                };
+            }
         }
     }
 }

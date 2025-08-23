@@ -57,5 +57,45 @@ namespace E_Commerce_API.Controllers
             }
             return BadRequest(response);
         }
+        [HttpGet("GetOrdersByStatus")]
+        public async Task<IActionResult>GetOrdersByStatus(string status, int pageNumber = 1, int pageSize = 10)
+        {
+            var response = await _orderServices.GetOrdersByStatusAsync(status, pageNumber, pageSize);
+            if (response.StatusCode >= 200 && response.StatusCode < 300)
+            {
+                return Ok(response);
+            }
+            return BadRequest(response);
+        }
+        [HttpDelete("DeleteOrder/{orderId}")]
+        public async Task<IActionResult> DeleteOrder(int orderId)
+        {
+            var response = await _orderServices.DeleteOrderAsync(orderId);
+            if (response.StatusCode >= 200 && response.StatusCode < 300)
+            {
+                return Ok(response);
+            }
+            return NotFound(response);
+        }
+        [HttpPut("UpdateOrderStatus/{orderId}")]
+        public async Task<IActionResult> UpdateOrderStatus(int orderId, [FromBody] string status)
+        {
+            var response = await _orderServices.UpdateOrderStatusAsync(orderId, status);
+            if (response.StatusCode >= 200 && response.StatusCode < 300)
+            {
+                return Ok(response);
+            }
+            return BadRequest(response);
+        }
+        [HttpGet("GetOrdersByUserName/{userName}")]
+        public async Task<IActionResult> GetOrdersByUserName(string userName)
+        {
+            var response = await _orderServices.GetOrdersByUserNameAsync(userName);
+            if (response.StatusCode >= 200 && response.StatusCode < 300)
+            {
+                return Ok(response);
+            }
+            return NotFound(response);
+        }
     }
 }

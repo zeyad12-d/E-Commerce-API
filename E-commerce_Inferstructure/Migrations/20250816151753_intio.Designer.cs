@@ -4,6 +4,7 @@ using E_commerce_Inferstructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace E_commerce_Inferstructure.Migrations
 {
     [DbContext(typeof(ApplicationDBcontext))]
-    partial class ApplicationDBcontextModelSnapshot : ModelSnapshot
+    [Migration("20250816151753_intio")]
+    partial class intio
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -282,16 +285,13 @@ namespace E_commerce_Inferstructure.Migrations
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("UserName")
+                    b.Property<string>("UserId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<bool>("ischeckedout")
-                        .HasColumnType("bit");
-
                     b.HasKey("ShoppingCartId");
 
-                    b.HasIndex("UserName")
+                    b.HasIndex("UserId")
                         .IsUnique();
 
                     b.ToTable("ShoppingCarts");
@@ -665,7 +665,7 @@ namespace E_commerce_Inferstructure.Migrations
                 {
                     b.HasOne("E_commerce_Core.Entityes.User", "User")
                         .WithOne("ShoppingCart")
-                        .HasForeignKey("E_commerce_Core.Entityes.ShoppingCart", "UserName")
+                        .HasForeignKey("E_commerce_Core.Entityes.ShoppingCart", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
