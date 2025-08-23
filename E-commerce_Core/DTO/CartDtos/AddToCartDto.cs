@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace E_commerce_Core.DTO.CartDtos
 {
-    public class AddToCartDto
+    public class AddtocartDto
     {
         [Required(ErrorMessage = "UserName is required.")]
         public String UserName { get; set; }

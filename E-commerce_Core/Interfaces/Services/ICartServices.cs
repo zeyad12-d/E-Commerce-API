@@ -5,12 +5,21 @@ namespace E_commerce_Core.Interfaces.Services
 {
     public interface ICartServices
     {
-        Task <ApiResponse<CartResponesDto>> GetCartByUserNameAsync(string userName);
-        Task<ApiResponse<AddToCartDto>>  AddToCart(AddToCartDto addToCartDto);
+        // add
+        Task<ApiResponse<CartResponesDto>> AddtoCartAsync(AddtocartDto addToCartDto);
+        // update
 
-        Task<ApiResponse <bool>> RemoveFromCart(int productId, string userName);
+        Task <ApiResponse<CartResponesDto>>UpdateCartItemAsync(UpdateCartitemDto updataCartitemDto);
+        // delete
+        Task<ApiResponse<CartResponesDto>> RemoveCartItemDto(RemoveCartItemDto removeCartItemDto);
 
-        Task <ApiResponse <bool>>UpdateCart( string UserName , UpdataCartitemDto updataCartitemDto);
+        //get
+        Task<ApiResponse<CartResponesDto>> GetCartAsync(string userName);
+        // helper
+        Task <ApiResponse<CartResponesDto>> ProjectCartForUserAsync(string userName);
+     
+
+       
 
 
     }

@@ -1,8 +1,10 @@
 using E_commerc_Servers.Services;
 using E_commerce_Core.Interfaces.Services;
+using E_commerce_Core.SendEmails;
 using E_commerce_Inferstructure.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
+using System.Text.Json.Serialization;
 
 namespace E_Commerce_API
 {
@@ -12,7 +14,8 @@ namespace E_Commerce_API
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            builder.Services.AddControllers();
+            builder.Services.AddControllers()
+                .AddJsonOptions(o=>o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(op =>
             {
@@ -66,12 +69,18 @@ namespace E_Commerce_API
                 .AddIdentityService()
                 .AddCorsService("CoresPolicy")
                 .addCustomJWT(builder.Configuration);
-            
+
+            builder.Services.Configure<EmailSettings>(
+                builder.Configuration.GetSection("EmailSettings"));
+
             builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies()).addUnitOfWork();
               builder.Services.AddScoped<IProductServices,ProductServices>();
             builder.Services.AddScoped<ICategoryServices, CategoryServices>();
             builder.Services.AddScoped<IOrderServices, OrderServices>();
             builder.Services.AddScoped<IAddressServices, AddressServices>();
+            builder.Services.AddScoped<ICartServices,ShoppingCartServices>();
+
+            builder.Services.AddScoped<IEmailService, EmailService>();
 
 
             var app = builder.Build();

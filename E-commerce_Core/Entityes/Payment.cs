@@ -6,6 +6,20 @@ using System.Threading.Tasks;
 
 namespace E_commerce_Core.Entityes
 {
+    public enum PaymentStatus
+    {
+        Pending,
+        Completed,
+        Failed
+    }
+    public enum PaymentMethod
+    {
+        COD,
+        CreditCard,
+        PayPal,
+        Stripe
+
+    }
     public class Payment
     {
         public int PaymentId { get; set; }
@@ -13,11 +27,11 @@ namespace E_commerce_Core.Entityes
         public Order Order { get; set; }
 
         
-        public string PaymentMethod { get; set; } // e.g., CreditCard, PayPal, CashOnDelivery
+        public  PaymentMethod paymentMethod{ get; set; } // e.g., CreditCard, PayPal, CashOnDelivery
 
         public decimal Amount { get; set; }
         public DateTime PaymentDate { get; set; } = DateTime.UtcNow;
-        public string PaymentStatus { get; set; } // Success, Failed, Pending
+        public  PaymentStatus  paymentStatus{ get; set; } // Success, Failed, Pending
         public string? TransactionId { get; set; }
     }
 }

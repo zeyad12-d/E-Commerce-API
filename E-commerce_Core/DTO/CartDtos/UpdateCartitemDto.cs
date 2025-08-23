@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace E_commerce_Core.DTO.CartDtos
 {
-    public class UpdataCartitemDto
+    public class UpdateCartitemDto
     {
         [Required(ErrorMessage = "UserName Is Required")]
         public string UserName { get; set; } = string.Empty;

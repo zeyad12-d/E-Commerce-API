@@ -120,7 +120,12 @@ namespace E_commerce_Inferstructure.Data
                 .HasOne(r => r.Product)
                 .WithMany()
                 .HasForeignKey(r => r.ProductId);
-
+            builder.Entity<Payment>()
+                .Property(p => p.paymentMethod)
+                .HasConversion<string>();
+            builder.Entity<Payment>()
+                .Property(p => p.paymentStatus)
+                .HasConversion<string>();
             // Decimal precision fixes
             builder.Entity<Product>().Property(p => p.Price).HasColumnType("decimal(18,2)");
             builder.Entity<CartItem>().Property(ci => ci.Price).HasColumnType("decimal(18,2)");
