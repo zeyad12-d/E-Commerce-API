@@ -22,6 +22,7 @@ namespace E_commerc_Servers.Services
             _userManager = user;
         }
 
+        #region CreateOrder
         public async Task<ApiResponse<OrderResponseDto>> CreateOrderAsync(CreateOrderDto orderDto)
         {
             try
@@ -90,7 +91,7 @@ namespace E_commerc_Servers.Services
                     ShoppingAddressId = orderDto.ShippingAddressId,
                     BillingAddressId = orderDto.BillingAddressId,
                     CreatedAt = DateTime.UtcNow,
-                    OrderStatus = "Pending",
+                    OrderStatus = OrderStatus.Pending,
                     Items = new List<OrderItem>()
                 };
 
@@ -138,7 +139,9 @@ namespace E_commerc_Servers.Services
                 };
             }
         }
+        #endregion
 
+        #region GetOrderById
         public async Task<ApiResponse<OrderResponseDto>> GetOrderByIdAsync(int orderId)
         {
             try
@@ -193,6 +196,9 @@ namespace E_commerc_Servers.Services
             }
         }
 
+        #endregion
+
+        #region GetAllOrder
         public async Task<ApiResponse<IEnumerable<OrderResponseDto>>> GetAllOrdersAsync(int pageNumber = 1, int pageSize = 10)
         {
             if (pageNumber < 1) pageNumber = 1;
@@ -235,7 +241,9 @@ namespace E_commerc_Servers.Services
                 TotalPages = (int)Math.Ceiling((double)totalOrders / pageSize)
             };
         }
+        #endregion
 
+        #region GetOrderBYuserName
         public async Task<ApiResponse<IEnumerable<OrderResponseDto>>> GetOrdersByUserNameAsync(string userName)
         {
             try 
@@ -295,7 +303,9 @@ namespace E_commerc_Servers.Services
                 };
             }
         }
+        #endregion
 
+        #region CalcultateTotalAmount
         public async Task<ApiResponse<decimal>> CalculateTotalAmountAsync(int orderId)
         {
             var order = await _unitOfWork.OrderRepo.Query().Include(o => o.Items).FirstOrDefaultAsync(s => s.OrderId == orderId);
@@ -321,6 +331,9 @@ namespace E_commerc_Servers.Services
 
        }
 
+        #endregion
+
+        #region DeleteOrder
         public async Task<ApiResponse<bool>> DeleteOrderAsync(int orderId)
         {
 
@@ -355,8 +368,10 @@ namespace E_commerc_Servers.Services
                 };
             }
         }
+        #endregion
 
-     public async Task<ApiResponse<IEnumerable<OrderResponseDto>>> GetOrdersByStatusAsync(string status  ,int pageNumber , int pageSize)
+        #region GetOrderByStatus
+        public async Task<ApiResponse<IEnumerable<OrderResponseDto>>> GetOrdersByStatusAsync(OrderStatus status  ,int pageNumber , int pageSize)
         { 
             if (pageNumber < 1) pageNumber = 1;
             if (pageSize < 1) pageSize = 10;
@@ -368,7 +383,7 @@ namespace E_commerc_Servers.Services
                 Include(C => C.Items)
                 .ThenInclude(C => C.Product)
                 .AsNoTracking()
-                .Where(c => c.OrderStatus.Trim().ToLower() == status.Trim().ToLower())
+                .Where(c => c.OrderStatus == status)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .Select(s => new OrderResponseDto
@@ -398,9 +413,10 @@ namespace E_commerc_Servers.Services
             };
         }
 
-       
+        #endregion
 
-        public async Task<ApiResponse<bool>> UpdateOrderStatusAsync(int orderId, string status)
+        #region UpdateOrderStauts
+        public async Task<ApiResponse<bool>> UpdateOrderStatusAsync(int orderId, OrderStatus status)
         {
             try 
             {
@@ -434,5 +450,48 @@ namespace E_commerc_Servers.Services
                 };
             }
         }
+
+        #endregion
+
+        #region Cancel Order
+        public async Task<ApiResponse<OrderResponseDto>> CancelOrder(int orderId)
+        {
+            var order = await _unitOfWork.OrderRepo.Query()
+                .Include(o => o.Items)
+                .ThenInclude(oi => oi.Product)
+                .FirstOrDefaultAsync(o => o.OrderId == orderId);
+
+            if (order == null)
+            {
+                return new ApiResponse<OrderResponseDto>(404, "Order not found");
+            }
+
+
+            if (!(order.OrderStatus == OrderStatus.Pending || order.OrderStatus == OrderStatus.Processing))
+            {
+                return new ApiResponse<OrderResponseDto>(400, "Order cannot be cancelled at this stage");
+            }
+
+
+            foreach (var item in order.Items)
+            {
+                item.Product.StockQuantity += item.Quantity;
+                _unitOfWork.ProductRepo.Update(item.Product);
+            }
+
+
+            order.OrderStatus = OrderStatus.Cancelled;
+            _unitOfWork.OrderRepo.Update(order);
+
+            await _unitOfWork.SaveChangesAsync();
+
+            return new ApiResponse<OrderResponseDto>(200, "Order cancelled successfully and stock restored",
+                new OrderResponseDto
+                {
+                    Id = order.OrderId,
+                    OrderStatus = order.OrderStatus
+                });
+        }
+        #endregion
     }
 }

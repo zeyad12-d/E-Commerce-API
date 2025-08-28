@@ -11,7 +11,9 @@ namespace E_commerce_Core.MappingProfile
         {
             // output dto
             CreateMap<ShoppingCart, CartResponesDto>()
-             .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.Items));
+             .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.Items))
+             .ForMember(d=> d.UserName, o=>o.MapFrom(s=>s.User.UserName));
+            
 
             CreateMap <CartItem,CartitemResponesDto>()
                 .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name))

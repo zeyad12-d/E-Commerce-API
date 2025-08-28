@@ -1,5 +1,6 @@
 ﻿using E_commerce_Core.ApiRespones;
 using E_commerce_Core.DTO.CartDtos;
+using E_commerce_Core.DTO.OrderDtos;
 
 namespace E_commerce_Core.Interfaces.Services
 {
@@ -15,8 +16,10 @@ namespace E_commerce_Core.Interfaces.Services
 
         //get
         Task<ApiResponse<CartResponesDto>> GetCartAsync(string userName);
+
+   
         // helper
-        Task <ApiResponse<CartResponesDto>> ProjectCartForUserAsync(string userName);
+        Task <ApiResponse<CartResponesDto>> ProjectCartForUserAsync(string UserId);
      
 
        

@@ -13,6 +13,7 @@ public class Product
     public List<string> Images { get; set; } = new List<string>();
     public double Rating { get; set; }
     public int ReviewCount { get; set; }
+    public ICollection<Review> Reviews { get; set; }= new List<Review>();
     public int CategoryId { get; set; }
     public Category Category { get; set; }
      

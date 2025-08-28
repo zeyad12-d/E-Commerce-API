@@ -1,5 +1,6 @@
 ﻿using E_commerce_Core.ApiRespones;
 using E_commerce_Core.DTO.OrderDtos;
+using E_commerce_Core.Entityes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,13 +14,13 @@ namespace E_commerce_Core.Interfaces.Services
         Task<ApiResponse<OrderResponseDto>> CreateOrderAsync(CreateOrderDto orderDto);
         Task<ApiResponse<OrderResponseDto>> GetOrderByIdAsync(int orderId);
         Task<ApiResponse<IEnumerable<OrderResponseDto>>> GetAllOrdersAsync(int PageNumber,int PageSize);
-        Task<ApiResponse<bool>> UpdateOrderStatusAsync(int orderId, string status);
+        Task<ApiResponse<bool>> UpdateOrderStatusAsync(int orderId, OrderStatus status);
         Task<ApiResponse<bool>> DeleteOrderAsync(int orderId);
-        Task<ApiResponse<IEnumerable<OrderResponseDto>>> GetOrdersByStatusAsync(string status ,int pageNumber, int pageSize);
+        Task<ApiResponse<IEnumerable<OrderResponseDto>>> GetOrdersByStatusAsync(OrderStatus status ,int pageNumber, int pageSize);
         Task<ApiResponse<IEnumerable<OrderResponseDto>>> GetOrdersByUserNameAsync(string userId);
 
         Task<ApiResponse<decimal>> CalculateTotalAmountAsync(int orderId);
         
-      
+      Task<ApiResponse<OrderResponseDto>> CancelOrder(int orderId);
     }
 }

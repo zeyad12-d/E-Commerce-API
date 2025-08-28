@@ -1,4 +1,5 @@
-﻿using System;
+﻿using E_commerce_Core.Entityes;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -18,7 +19,7 @@ namespace E_commerce_Core.DTO.OrderDtos
 
         public DateTime OrderDate { get; set; } = DateTime.UtcNow;
 
-        public string OrderStatus { get; set; } // e.g., Pending, Shipped, Delivered, Cancelled
+        public OrderStatus OrderStatus { get; set; } // e.g., Pending, Shipped, Delivered, Cancelled
 
         public decimal price { get; set; }  
         public decimal TotalAmount { get; set; }

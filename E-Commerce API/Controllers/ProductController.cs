@@ -1,7 +1,6 @@
 ﻿using E_commerc_Servers.Services.DTO.ProductDto;
-using E_commerce_Core.Interfaces;
 using E_commerce_Core.Interfaces.Services;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace E_Commerce_API.Controllers
@@ -12,12 +11,12 @@ namespace E_Commerce_API.Controllers
     {
         private readonly IProductServices _productService;
 
-        public ProductController(IProductServices productServics )
+        public ProductController(IProductServices productServics)
         {
             _productService = productServics;
         }
 
-        // Create
+        [Authorize(Roles = "Admin,Vendor")]
         [HttpPost("AddProduct")]
         public async Task<IActionResult> CreateProductAsync([FromBody] ProductCreateDto productDto)
         {
@@ -27,10 +26,13 @@ namespace E_Commerce_API.Controllers
                 return Created(
              $"/api/Product/GetProductById/{response.Data.ProductId}",
              response.Data);
-            };
+            }
+            ;
             return BadRequest(response.Message);
         }
-        // Get All Products
+
+        // Get All Products (Everyone)
+        [AllowAnonymous]
         [HttpGet("GetAllProducts")]
         public async Task<IActionResult> GetAllProductsAsync(int pageNumber = 1, int pageSize = 10)
         {
@@ -41,7 +43,8 @@ namespace E_Commerce_API.Controllers
             }
             return BadRequest(response.Message);
         }
-        // Get Product By Id
+
+        [AllowAnonymous]
         [HttpGet("GetProductById/{id}")]
         public async Task<IActionResult> GetProductByIdAsync(int id)
         {
@@ -52,9 +55,10 @@ namespace E_Commerce_API.Controllers
             }
             return NotFound(response.Message);
         }
-        // Get All Products By Category
-        [HttpGet("GetAllProductsByCategory/{categoryId}")]
 
+      
+        [AllowAnonymous]
+        [HttpGet("GetAllProductsByCategory/{categoryId}")]
         public async Task<IActionResult> GetAllProductsByCategoryAsync(int categoryId, int pageNumber = 1, int pageSize = 10)
         {
             var response = await _productService.GetAllProductsByCategoryAsync(categoryId, pageNumber, pageSize);
@@ -64,7 +68,9 @@ namespace E_Commerce_API.Controllers
             }
             return NotFound(response.Message);
         }
-        // Search Products
+
+        
+        [AllowAnonymous]
         [HttpGet("SearchProducts")]
         public async Task<IActionResult> SearchProductsAsync(string searchTerm, int pageNumber = 1, int pageSize = 10)
         {
@@ -75,7 +81,9 @@ namespace E_Commerce_API.Controllers
             }
             return NotFound(response.Message);
         }
-        // Update Product
+
+        
+        [Authorize(Roles = "Admin,Vendor")]
         [HttpPut("UpdateProduct/{id}")]
         public async Task<IActionResult> UpdateProductAsync(int id, [FromBody] ProductUpdateDto productDto)
         {
@@ -86,7 +94,9 @@ namespace E_Commerce_API.Controllers
             }
             return BadRequest(response.Message);
         }
-        // Update Product Status
+
+        
+        [Authorize(Roles = "Admin")]
         [HttpPut("UpdateProductStatus/{id}")]
         public async Task<IActionResult> UpdateProductStatusAsync(int id, [FromBody] bool isActive)
         {
@@ -97,7 +107,9 @@ namespace E_Commerce_API.Controllers
             }
             return BadRequest(response.Message);
         }
-        // Delete Product
+
+        
+        [Authorize(Roles = "Admin,Vendor")]
         [HttpDelete("DeleteProduct/{id}")]
         public async Task<IActionResult> DeleteProductAsync(int id)
         {
@@ -109,5 +121,4 @@ namespace E_Commerce_API.Controllers
             return NotFound(response.Message);
         }
     }
-
 }

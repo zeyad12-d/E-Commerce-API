@@ -64,7 +64,7 @@ namespace E_commerce_Inferstructure.DependencyInjection
 
             var adminEmail = "admin@system.com";
             var adminUserName = "admin";
-            var adminPassword = "Admin@123"; // غيره قبل الإنتاج
+            var adminPassword = "Admin@123"; 
 
             var adminUser = await userManager.FindByEmailAsync(adminEmail);
             if (adminUser == null)

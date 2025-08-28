@@ -46,7 +46,7 @@ namespace E_commerce_Inferstructure.Data
                 .HasForeignKey(c => c.ParentCategoryId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Product - ProductImages
+         
        
 
             // ShoppingCart - User (One-to-One)
@@ -56,7 +56,7 @@ namespace E_commerce_Inferstructure.Data
             builder.Entity<ShoppingCart>()
                 .HasOne(sc => sc.User)
                 .WithOne(u => u.ShoppingCart)
-                .HasForeignKey<ShoppingCart>(sc => sc.UserName);
+                .HasForeignKey<ShoppingCart>(sc => sc.userId);
 
 
             // ShoppingCart - CartItems
@@ -118,13 +118,19 @@ namespace E_commerce_Inferstructure.Data
             // Review - Product
             builder.Entity<Review>()
                 .HasOne(r => r.Product)
-                .WithMany()
+                .WithMany(r=>r.Reviews)
                 .HasForeignKey(r => r.ProductId);
+
+        
+
             builder.Entity<Payment>()
                 .Property(p => p.paymentMethod)
                 .HasConversion<string>();
             builder.Entity<Payment>()
                 .Property(p => p.paymentStatus)
+                .HasConversion<string>();
+            builder.Entity<Order>()
+                .Property(p=>p.OrderStatus)
                 .HasConversion<string>();
             // Decimal precision fixes
             builder.Entity<Product>().Property(p => p.Price).HasColumnType("decimal(18,2)");

@@ -79,8 +79,11 @@ namespace E_Commerce_API
             builder.Services.AddScoped<IOrderServices, OrderServices>();
             builder.Services.AddScoped<IAddressServices, AddressServices>();
             builder.Services.AddScoped<ICartServices,ShoppingCartServices>();
-
+            builder.Services.AddScoped<ICheckoutServices, CheckoutServices>();
             builder.Services.AddScoped<IEmailService, EmailService>();
+            builder.Services.AddScoped<EmailService>();
+            builder.Services.AddScoped<IReviewService, ReviewService>();
+            builder.Services.AddScoped<IPaymentServices, PaymentServices>();
 
 
             var app = builder.Build();

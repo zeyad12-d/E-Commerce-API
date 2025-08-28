@@ -1,24 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace E_commerce_Core.Entityes
+﻿namespace E_commerce_Core.Entityes
 {
     public enum PaymentStatus
     {
         Pending,
         Completed,
-        Failed
+        Failed,
+        Refunded
     }
     public enum PaymentMethod
     {
         COD,
         CreditCard,
         PayPal,
-        Stripe
-
+        Stripe,
+        CashOnDelivery
     }
     public class Payment
     {

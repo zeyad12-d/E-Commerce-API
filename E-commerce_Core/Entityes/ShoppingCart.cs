@@ -11,8 +11,8 @@ namespace E_commerce_Core.Entityes
         public int ShoppingCartId { get; set; } 
 
         public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+        public string userId { get; set; }
 
-        public string UserName { get; set; }
         public User User { get; set; }
 
         public bool ischeckedout { get; set; } = false;

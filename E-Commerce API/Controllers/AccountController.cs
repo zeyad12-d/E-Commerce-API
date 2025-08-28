@@ -18,12 +18,14 @@ namespace E_Commerce_API.Controllers
         private readonly UserManager<User> _userManager;
         private readonly IConfiguration _configuration;
         private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly SignInManager<User>_signInManager;
 
-        public AccountController(UserManager<User> userManager, IConfiguration configuration, RoleManager<IdentityRole> roleManager)
+        public AccountController(UserManager<User> userManager, IConfiguration configuration, RoleManager<IdentityRole> roleManager, SignInManager<User> signInManager)
         {
             _userManager = userManager;
             _configuration = configuration;
             _roleManager = roleManager;
+           _signInManager = signInManager;
         }
 
         // ================= Register =================
@@ -98,7 +100,13 @@ namespace E_Commerce_API.Controllers
                 expiration = token.ValidTo
             });
         }
+        [HttpPost("Logout")]
+        public async Task<IActionResult> Logout()
+        {
+            await _signInManager.SignOutAsync();
 
+            return Ok();
+        }
         // ================= Get All Users =================
         [HttpGet("users")]
         [Authorize(Roles = "Admin")]

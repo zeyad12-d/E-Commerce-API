@@ -7,11 +7,6 @@ using E_commerce_Core.Interfaces.Services;
 using E_commerce_Core.UnitOfWork;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace E_commerc_Servers.Services
 {
@@ -21,39 +16,52 @@ namespace E_commerc_Servers.Services
         private readonly IMapper _mapper;
         private readonly UserManager<User> _userManager;
 
-        public ShoppingCartServices(UnitOfWork unitofwork,IMapper mapper,UserManager<User> usermanger )
+        public ShoppingCartServices(UnitOfWork unitofwork, IMapper mapper, UserManager<User> usermanger)
         {
             _unitOfWork = unitofwork;
             _mapper = mapper;
             _userManager = usermanger;
-
         }
+
+        #region AddTocart
         public async Task<ApiResponse<CartResponesDto>> AddtoCartAsync(AddtocartDto addToCartDto)
         {
             try
             {
                 if (addToCartDto == null)
-                    return new ApiResponse<CartResponesDto> { StatusCode = 400, Message = "Invalid Cart Data", Data = null };
+                    return new ApiResponse<CartResponesDto>(400, "Invalid Cart Data", null);
+
+                // Get User
+                var user = await _userManager.FindByNameAsync(addToCartDto.UserName);
+                if (user == null)
+                    return new ApiResponse<CartResponesDto>(404, "User not found");
+                var userId = user.Id;
+
+                // Get Product
                 var product = await _unitOfWork.ProductRepo.GetById(addToCartDto.ProductId);
                 if (product == null || !product.IsActive)
-                {
-                    return new ApiResponse<CartResponesDto> { StatusCode = 404, Message = "Product not found", Data = null };
-                }
+                    return new ApiResponse<CartResponesDto>(404, "Product not found", null);
+
                 if (product.StockQuantity < addToCartDto.Quantity)
-                {
-                    return new ApiResponse<CartResponesDto> { StatusCode = 400, Message = "Insufficient stock", Data = null };
-                }
-                var cart = await _unitOfWork.ShoppingCartRepo.Query().Include(c => c.Items).
-                      FirstOrDefaultAsync(u => u.UserName == addToCartDto.UserName && !u.ischeckedout);
-                if (cart is null)
+                    return new ApiResponse<CartResponesDto>(400, "Insufficient stock", null);
+
+                // Get or Create Cart
+                var cart = await _unitOfWork.ShoppingCartRepo.Query()
+                    .Include(c => c.Items)
+                    .FirstOrDefaultAsync(u => u.userId == userId && !u.ischeckedout);
+
+                if (cart == null)
                 {
                     cart = new ShoppingCart
                     {
-                        UserName = addToCartDto.UserName
+                        userId = userId,
+                        Items = new List<CartItem>()
                     };
                     await _unitOfWork.ShoppingCartRepo.AddAsync(cart);
                 }
-                var existingItems= cart.Items.FirstOrDefault(u=>u.ProductId== addToCartDto.ProductId);
+
+                // Add or Update CartItem
+                var existingItems = cart.Items.FirstOrDefault(u => u.ProductId == addToCartDto.ProductId);
                 if (existingItems != null)
                 {
                     existingItems.Quantity += addToCartDto.Quantity;
@@ -68,154 +76,142 @@ namespace E_commerc_Servers.Services
                         Price = product.Price
                     });
                 }
+
                 await _unitOfWork.SaveChangesAsync();
 
-                var respones = await ProjectCartForUserAsync(addToCartDto.UserName);
-                if (respones != null) 
-                {
-                    return new ApiResponse<CartResponesDto>
-                    (
-                      200,
-                      "Item Added to cart",
-                       respones.Data )
-                    ;
-                }
-                return new ApiResponse<CartResponesDto>
-                {
-                    StatusCode = 500,
-                    Message = " SameThing went Worng",
-                    Data = null
-                };
+                // Response
+                var respones = await ProjectCartForUserAsync(userId);
+                return new ApiResponse<CartResponesDto>(200, "Item Added to cart", respones.Data);
             }
             catch (Exception ex)
             {
-                return new ApiResponse<CartResponesDto>
-                {
-                    StatusCode = 500,
-                    Message = ex.Message,
-                    Data = null
-                };
+                var msg = ex.InnerException?.Message ?? ex.Message;
+                throw new Exception("Save failed: " + msg, ex);
             }
         }
+        #endregion
 
-
+        #region UpdateCartItem
         public async Task<ApiResponse<CartResponesDto>> UpdateCartItemAsync(UpdateCartitemDto updataDto)
         {
             try
             {
                 if (updataDto == null)
-                    return new ApiResponse<CartResponesDto>(400, "Invaid PayLoad ", null);
-                var cart = await _unitOfWork.ShoppingCartRepo.Query().Include(s => s.Items)
-                    .FirstOrDefaultAsync(u => u.UserName == updataDto.UserName && !u.ischeckedout);
+                    return new ApiResponse<CartResponesDto>(400, "Invalid Payload", null);
+
+                var user = await _userManager.FindByNameAsync(updataDto.UserName);
+                if (user == null)
+                    return new ApiResponse<CartResponesDto>(404, "User not found");
+                var userId = user.Id;
+
+                var cart = await _unitOfWork.ShoppingCartRepo.Query()
+                    .Include(s => s.Items)
+                    .FirstOrDefaultAsync(u => u.userId == userId && !u.ischeckedout);
+
                 if (cart == null)
                     return new ApiResponse<CartResponesDto>(404, "Cart Not Found", null);
+
                 var items = cart.Items.FirstOrDefault(u => u.CartItemId == updataDto.CartItemId);
-                if (items == null) return new ApiResponse<CartResponesDto>(404, "Cart items Not Found");
+                if (items == null)
+                    return new ApiResponse<CartResponesDto>(404, "Cart items Not Found");
+
                 if (updataDto.Quantity < 1)
-                    return new ApiResponse<CartResponesDto>(400, "Quantity must be At least one");
+                    return new ApiResponse<CartResponesDto>(400, "Quantity must be at least one");
+
                 var product = await _unitOfWork.ProductRepo.GetById(items.ProductId);
                 if (product == null || !product.IsActive)
                     return new ApiResponse<CartResponesDto>(404, "Product Is Not Found or Unactive", null);
+
                 if (product.StockQuantity < updataDto.Quantity)
-                    return new ApiResponse<CartResponesDto>(400, "This Product Quntity UnAvailable", null);
+                    return new ApiResponse<CartResponesDto>(400, "This Product Quantity UnAvailable", null);
+
                 items.Quantity = updataDto.Quantity;
                 await _unitOfWork.SaveChangesAsync();
 
-                var reapones = await ProjectCartForUserAsync(updataDto.UserName);
-                return new ApiResponse<CartResponesDto>(200, "Cart item Updated", reapones.Data);
-
-
-            }
-            catch(Exception ex)
-            {
-                return new ApiResponse<CartResponesDto>(500, ex.Message, null);
-            }
-        }
-
-        public async Task<ApiResponse<CartResponesDto>> GetCartAsync(string userName)
-        {
-            try
-            {
-                var cart = await ProjectCartForUserAsync(userName);
-                if (
-                    cart == null)
-                    return new ApiResponse<CartResponesDto>(404, "Cart With this user not found",null);
-
-                return new ApiResponse<CartResponesDto>
-                {
-                    StatusCode = 200,
-                    Message = "Cart retrieved",
-                    Data = cart.Data
-                };
-
+                var respones = await ProjectCartForUserAsync(userId);
+                return new ApiResponse<CartResponesDto>(200, "Cart item Updated", respones.Data);
             }
             catch (Exception ex)
             {
                 return new ApiResponse<CartResponesDto>(500, ex.Message, null);
             }
         }
+        #endregion
 
+        #region GetCartItems
+        public async Task<ApiResponse<CartResponesDto>> GetCartAsync(string userName)
+        {
+            try
+            {
+                var user = await _userManager.FindByNameAsync(userName);
+                if (user == null)
+                    return new ApiResponse<CartResponesDto>(404, "User not found");
+
+                var cart = await ProjectCartForUserAsync(user.Id);
+                if (cart == null || cart.Data == null)
+                    return new ApiResponse<CartResponesDto>(404, "Cart With this user not found", null);
+
+                return new ApiResponse<CartResponesDto>(200, "Cart retrieved", cart.Data);
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<CartResponesDto>(500, ex.Message, null);
+            }
+        }
+        #endregion
+
+        #region RemoveCartItem
         public async Task<ApiResponse<CartResponesDto>> RemoveCartItemDto(RemoveCartItemDto removeCartItemDto)
         {
             try
             {
                 if (removeCartItemDto == null)
                     return new ApiResponse<CartResponesDto>(400, "Invalid Payload", null);
-                var cart = await _unitOfWork.ShoppingCartRepo.Query().Include(u => u.Items)
-                    .FirstOrDefaultAsync(u => u.UserName == removeCartItemDto.UserName && !u.ischeckedout);
 
+                var user = await _userManager.FindByNameAsync(removeCartItemDto.UserName);
+                if (user == null)
+                    return new ApiResponse<CartResponesDto>(404, "User not found");
+                var userId = user.Id;
+
+                var cart = await _unitOfWork.ShoppingCartRepo.Query()
+                    .Include(u => u.Items)
+                    .FirstOrDefaultAsync(u => u.userId == userId && !u.ischeckedout);
 
                 if (cart == null)
                     return new ApiResponse<CartResponesDto>(404, "Active cart not found for this user", null);
 
-                var items = cart.Items.FirstOrDefault(u=>u.CartItemId== removeCartItemDto.cartItemId);
+                var items = cart.Items.FirstOrDefault(u => u.CartItemId == removeCartItemDto.cartItemId);
                 if (items == null)
-                    return new ApiResponse<CartResponesDto>(404, "cart items not found", null);
+                    return new ApiResponse<CartResponesDto>(404, "Cart item not found", null);
 
                 cart.Items.Remove(items);
                 await _unitOfWork.SaveChangesAsync();
 
-                var respones = await ProjectCartForUserAsync(removeCartItemDto.UserName);
-                return new ApiResponse<CartResponesDto>
-                {
-                    StatusCode = 200,
-                    Message = "Items removed Sucssccfully ",
-                    Data = respones.Data
-                };
+                var respones = await ProjectCartForUserAsync(userId);
+                return new ApiResponse<CartResponesDto>(200, "Item removed Successfully", respones.Data);
             }
             catch (Exception ex)
             {
                 return new ApiResponse<CartResponesDto>(500, ex.Message, null);
             }
         }
+        #endregion
 
-  
-
-
-         // This method is intended to project the cart for a specific user.
-        public async Task<ApiResponse<CartResponesDto>> ProjectCartForUserAsync(string userName)
+        #region Helper
+        public async Task<ApiResponse<CartResponesDto>> ProjectCartForUserAsync(string userId)
         {
-            var cart = await _unitOfWork.ShoppingCartRepo.Query().
-                Where(u => u.UserName == userName && !u.ischeckedout)
+            var cart = await _unitOfWork.ShoppingCartRepo.Query()
+                .Where(u => u.userId == userId && !u.ischeckedout)
                 .ProjectTo<CartResponesDto>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync();
-            if(cart==null)
-            {
-                return new ApiResponse<CartResponesDto>
-                {
-                    StatusCode = 404,
-                    Message = "Cart not found for the user",
-                    Data = null
-                };
-            }
-            return new ApiResponse<CartResponesDto>
-            {
-                StatusCode =200,
-                Message = "Cart retrieved successfully",
-                Data = cart
-            };
 
+            if (cart == null)
+                return new ApiResponse<CartResponesDto>(404, "Cart not found for the user", null);
+
+            return new ApiResponse<CartResponesDto>(200, "Cart retrieved successfully", cart);
         }
 
+       
+        #endregion
     }
 }

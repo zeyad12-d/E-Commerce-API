@@ -19,10 +19,23 @@ namespace E_commerce_Core.Entityes
 
         public Address BillingAddress{ get; set; }
         public decimal TotalAmount { get; set; }
-        public string OrderStatus { get; set; }
+        public OrderStatus OrderStatus { get; set; }
         public string paymentMethod { get; set; }
         public DateTime CreatedAt { get; set; }
         public ICollection<OrderItem> Items { get; set; }
         public Payment Payment { get; set; }
+    }
+
+    public enum OrderStatus
+    {
+        Pending,     
+        Confirmed,   
+        Cancelled,
+        Processing,
+        Shipped,     
+        Delivered,  
+        Refunded,
+        Failed
+
     }
 }

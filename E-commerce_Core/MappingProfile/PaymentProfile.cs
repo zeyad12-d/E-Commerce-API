@@ -13,7 +13,7 @@ namespace E_commerce_Core.MappingProfile
     {
         public PaymentProfile()
         {
-            CreateMap<Payment,PaymentResponseDTO>();
+            CreateMap<Payment,PaymentResponseDTO>().ReverseMap();
 
             CreateMap<PaymentRequestDTO,Payment>();
 

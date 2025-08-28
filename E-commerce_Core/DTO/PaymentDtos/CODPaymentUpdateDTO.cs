@@ -10,5 +10,6 @@ namespace E_commerce_Core.DTO.PaymentDtos
     {
         public int PaymentId { get; set; }
         public int OrderId { get; set; }
+        public string transactionId { get; set; }
     }
 }
